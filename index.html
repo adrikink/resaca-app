@@ -3126,7 +3126,20 @@ function showLevelUpToast(level) {
   setTimeout(() => { t.classList.remove('show'); setTimeout(()=>t.remove(),400); }, 3500);
 }
 
-const RETOS_GRUPO=['Que nadie supere el 80% esta noche 👮','Alcanzad entre todos más de 200% sumando vuestros scores 💪','Primera persona en llegar al 50% gana el reto 🎯','¡Todos tenéis que registrar una noche esta semana! 📅','El que menos beba esta noche paga la siguiente ronda 🍺','Que al menos 3 miembros lleguen al nivel "Contentillo" 🥂','Nadie por debajo del 30% — esta noche se sale 🔥','El grupo tiene que lograr el mismo nivel exacto ±5% 🎲'];
+const RETOS_GRUPO=[
+  'Que nadie supere el 80% de destrucción esta noche 👮 — el que lo rompa paga una ronda',
+  'El que menos beba esta noche invita al kebab de las 4am 🌯',
+  'Todos tenéis que registrar vuestra noche antes de las 2am 🌙',
+  'Esta noche nadie puede pedir agua — si tienes sed, ya sabes qué hay 💧🚫',
+  'El primero en llegar al nivel "Perjudicado" gana el derecho a elegir el siguiente bar 🍻',
+  'Nadie se puede ir a casa antes de medianoche ⛔🕛',
+  'Al menos 3 miembros del grupo tienen que llegar al nivel "Contentillo" o más esta noche 🥂',
+  'El que tenga el score más bajo esta noche paga la primera ronda la próxima 🎯',
+  'Todos tenéis que registrar al menos una noche esta semana — ¡sin excusas! 📅',
+  'Esta noche se sale fuerte: que nadie se quede por debajo del 40% 🔥',
+  'El que llegue al nivel "Destruido" primero elige el juego que juega el grupo 💀',
+  'Nadie puede repetir el mismo tipo de bebida dos veces seguidas 🔄🍹',
+];
 function getGroupChallenge(){const d=new Date();const seed=d.getDate()+d.getMonth()*31;return RETOS_GRUPO[seed%RETOS_GRUPO.length];}
 function startGroupChallenge() {
   // Visual feedback en el botón
