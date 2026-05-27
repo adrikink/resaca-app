@@ -592,6 +592,41 @@ select.field option{background:#111827;color:#E8ECF4}
 .gv-slide{display:none}
 .gv-slide.active{display:block}
 
+/* ── XP SYSTEM ── */
+.xp-bar-wrap{background:rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.xp-bar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.xp-level-badge{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px}
+.xp-level-badge .lv-emoji{font-size:20px}
+.xp-level-name{color:#E8ECF4}
+.xp-count{font-size:12px;color:rgba(168,185,220,.5)}
+.xp-track{height:8px;background:rgba(255,255,255,.08);border-radius:8px;overflow:hidden}
+.xp-fill{height:100%;border-radius:8px;transition:width .6s cubic-bezier(.4,0,.2,1);
+  background:linear-gradient(90deg,#7699D6,#24A2DA)}
+.xp-next{font-size:11px;color:rgba(168,185,220,.35);margin-top:5px;text-align:right}
+
+/* XP Toast */
+.xp-toast{
+  position:fixed;top:72px;left:50%;transform:translateX(-50%) translateY(-12px);
+  background:rgba(20,24,50,.96);border:1px solid rgba(118,153,214,.35);
+  color:#7699D6;font-size:13px;font-weight:700;
+  padding:8px 18px;border-radius:24px;
+  z-index:9999;opacity:0;pointer-events:none;
+  transition:opacity .25s, transform .25s;
+  white-space:nowrap;
+}
+.xp-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.xp-toast span{color:rgba(168,185,220,.55);font-weight:400;margin-left:6px;font-size:12px}
+.xp-toast.levelup{
+  background:linear-gradient(135deg,rgba(118,153,214,.25),rgba(36,162,218,.25));
+  border-color:#24A2DA;color:#E8ECF4;font-size:14px;
+}
+
+/* Reto accepted state */
+.reto-btn.accepted{
+  background:rgba(100,200,120,.25);border:1px solid rgba(100,200,120,.4);
+  color:#64c878;cursor:default;
+}
+
 /* ── CHAT ── */
 .chat-wrap{display:flex;flex-direction:column;height:calc(100dvh - 340px);min-height:300px;position:relative}
 .chat-msgs{flex:1;overflow-y:auto;padding:4px 0 8px;display:flex;flex-direction:column;gap:2px;
@@ -2856,9 +2891,146 @@ function getGroupAllSessions(group, myName, mySessions){
   return [...tagged,...fake];
 }
 
+/* ═══════════════════════════════════════
+   XP / LEVEL SYSTEM
+═══════════════════════════════════════ */
+const XP_LEVELS = [
+  { min:0,    name:'Novato',   badge:'🌱', color:'#7a9e7e' },
+  { min:100,  name:'Amateur',  badge:'🍺', color:'#e8a838' },
+  { min:300,  name:'Habitual', badge:'🔥', color:'#e05c3a' },
+  { min:700,  name:'Veterano', badge:'💀', color:'#9b59b6' },
+  { min:1500, name:'Leyenda',  badge:'👑', color:'#f1c40f' },
+];
+
+// Anti-gaming rules:
+// session  → +25 XP, máx 1/día, cooldown 6h (no importa cuántas sesiones hagas)
+// challenge→ +50 XP, máx 1/día, cooldown 20h
+// chat     → +3 XP,  máx 10/día, sin cooldown
+// group    → +75 XP, solo 1 vez por vida (one-time)
+const XP_RULES = {
+  session:   { xp:25, dailyCap:1, cooldownH:6,      oneTime:false, label:'sesión calculada' },
+  challenge: { xp:50, dailyCap:1, cooldownH:20,     oneTime:false, label:'reto aceptado'    },
+  chat:      { xp:3,  dailyCap:10, cooldownH:0,     oneTime:false, label:'mensaje enviado'  },
+  group:     { xp:75, dailyCap:1, cooldownH:999999, oneTime:true,  label:'grupo creado/unido'},
+};
+
+function getXP() {
+  try { return parseInt(localStorage.getItem('rc_xp') || '0') || 0; } catch(e) { return 0; }
+}
+function getXPLevel(xp) {
+  let level = XP_LEVELS[0];
+  for(const l of XP_LEVELS) { if(xp >= l.min) level = l; }
+  return level;
+}
+function getXPNext(xp) {
+  for(let i = XP_LEVELS.length-1; i >= 0; i--) {
+    if(xp >= XP_LEVELS[i].min) return XP_LEVELS[i+1] || null;
+  }
+  return XP_LEVELS[1];
+}
+function getXPProgress(xp) {
+  const cur  = getXPLevel(xp);
+  const next = getXPNext(xp);
+  if(!next) return 100;
+  return Math.round((xp - cur.min) / (next.min - cur.min) * 100);
+}
+
+function earnXP(type) {
+  const rule = XP_RULES[type];
+  if(!rule) return 0;
+  const today = new Date().toDateString();
+  const logKey = 'rc_xplog_' + type;
+  let log = [];
+  try { log = JSON.parse(localStorage.getItem(logKey) || '[]'); } catch(e) {}
+
+  if(rule.oneTime && log.length > 0) return 0;
+
+  const todayCount = log.filter(e => e.d === today).length;
+  if(todayCount >= rule.dailyCap) return 0;
+
+  if(rule.cooldownH > 0 && log.length > 0) {
+    const last = new Date(log[log.length-1].ts);
+    if((Date.now() - last.getTime()) / 3600000 < rule.cooldownH) return 0;
+  }
+
+  const prev = getXP();
+  const next = prev + rule.xp;
+  try {
+    localStorage.setItem('rc_xp', next);
+    log.push({ d: today, ts: new Date().toISOString() });
+    if(log.length > 60) log = log.slice(-60);
+    localStorage.setItem(logKey, JSON.stringify(log));
+  } catch(e) {}
+
+  showXPToast(rule.xp, rule.label);
+
+  // Level-up check
+  if(getXPLevel(prev).name !== getXPLevel(next).name) {
+    setTimeout(() => showLevelUpToast(getXPLevel(next)), 1600);
+  }
+
+  // Refresh profile XP bar if visible
+  const xpFill = document.querySelector('.xp-fill');
+  if(xpFill) {
+    xpFill.style.width = getXPProgress(next) + '%';
+    const xpCount = document.querySelector('.xp-count');
+    if(xpCount) xpCount.textContent = next + ' XP';
+  }
+
+  return rule.xp;
+}
+
+function showXPToast(amount, label) {
+  const t = document.createElement('div');
+  t.className = 'xp-toast';
+  t.innerHTML = `+${amount} XP <span>${label}</span>`;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(()=>t.remove(),400); }, 2500);
+}
+function showLevelUpToast(level) {
+  const t = document.createElement('div');
+  t.className = 'xp-toast levelup';
+  t.innerHTML = `${level.badge} ¡Nuevo nivel! <strong>${level.name}</strong>`;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(()=>t.remove(),400); }, 3500);
+}
+
 const RETOS_GRUPO=['Que nadie supere el 80% esta noche 👮','Alcanzad entre todos más de 200% sumando vuestros scores 💪','Primera persona en llegar al 50% gana el reto 🎯','¡Todos tenéis que registrar una noche esta semana! 📅','El que menos beba esta noche paga la siguiente ronda 🍺','Que al menos 3 miembros lleguen al nivel "Contentillo" 🥂','Nadie por debajo del 30% — esta noche se sale 🔥','El grupo tiene que lograr el mismo nivel exacto ±5% 🎲'];
 function getGroupChallenge(){const d=new Date();const seed=d.getDate()+d.getMonth()*31;return RETOS_GRUPO[seed%RETOS_GRUPO.length];}
-function startGroupChallenge(){showTab('t-calcular');setTimeout(()=>window.scrollTo({top:0,behavior:'smooth'}),100);}
+function startGroupChallenge() {
+  // Visual feedback en el botón
+  const btn = document.querySelector('.reto-btn');
+  if(btn) {
+    btn.textContent = '✅ ¡Reto aceptado!';
+    btn.classList.add('accepted');
+    btn.onclick = null;
+  }
+
+  // Post system message al chat del grupo
+  const group = myGroups.find(g => g.id === activeGroupId);
+  if(group) {
+    const myName = localStorage.getItem('rc_username') || currentUser?.email?.split('@')[0] || 'Tú';
+    const reto = getGroupChallenge();
+    addChatMessage(group.id, {
+      id: uid(),
+      sender: '🎯 Sistema',
+      senderInitial: '🎯',
+      senderColor: 'linear-gradient(135deg,#FF4D6D,#FF6B35)',
+      text: `🎯 ${myName} ha aceptado el reto: "${reto}"`,
+      type: 'text',
+      isOwn: false,
+      isSystem: true,
+      ts: new Date().toISOString(),
+    });
+    // Ir al chat tras un momento para ver la notificación
+    setTimeout(() => gvTab(4), 700);
+  }
+
+  // XP con anti-spam
+  earnXP('challenge');
+}
 
 function gvTab(idx){
   window._gvActiveTab=idx;
@@ -3006,6 +3178,7 @@ function sendChatMsg(){
     senderColor:AVATAR_COLORS[0],text,type:'text',isOwn:true,
     ts:new Date().toISOString(),
   });
+  earnXP('chat');
   if(DEV_MODE) scheduleDevReply(window._gvGroupId);
 }
 
@@ -3165,6 +3338,7 @@ $('btn-create-group').addEventListener('click',async(e)=>{
     if(!myGroups.find(g=>g.id===group.id)) myGroups.push(group);
     saveGroups();
     activeGroupId = group.id;
+    earnXP('group'); // one-time XP for creating/joining a group
     closeGroupModal();
     // Switch to liga tab
     const slides = document.getElementById('main-slides');
@@ -3244,6 +3418,25 @@ function renderProfileMain() {
       <div class="profile-email">${email}</div>
       <span class="sub-badge ${isPro?'pro':'free'}">${isPro?'⭐ '+T('sub_pro'):T('sub_free')}</span>
     </div>
+
+    ${(() => {
+      const xp = getXP();
+      const lv = getXPLevel(xp);
+      const nx = getXPNext(xp);
+      const pct = getXPProgress(xp);
+      return `
+    <div class="xp-bar-wrap">
+      <div class="xp-bar-top">
+        <div class="xp-level-badge">
+          <span class="lv-emoji">${lv.badge}</span>
+          <span class="xp-level-name">${lv.name}</span>
+        </div>
+        <span class="xp-count">${xp} XP</span>
+      </div>
+      <div class="xp-track"><div class="xp-fill" style="width:${pct}%"></div></div>
+      <div class="xp-next">${nx ? `${xp}/${nx.min} XP → ${nx.badge} ${nx.name}` : '👑 Nivel máximo'}</div>
+    </div>`;
+    })()}
 
     <div class="sec-title" style="margin-bottom:10px">${T('stats_section')||'Stats'}</div>
     <div class="stats-grid">
@@ -3870,7 +4063,9 @@ function loadLocalDrinks(){
 function saveSessionLocal(session, groupIds=[]){
   const sessions=getSessionsLocal();
   sessions.push({...session,groupIds,created_at:new Date().toISOString()});
-  localStorage.setItem('rc_sessions',JSON.stringify(sessions.slice(-50)));
+  try { localStorage.setItem('rc_sessions',JSON.stringify(sessions.slice(-50))); } catch(e) {}
+  // XP — solo 1 vez/día con cooldown 6h, sin importar el score (anti-spam)
+  earnXP('session');
 }
 function getSessionsLocal(){
   try{ return JSON.parse(localStorage.getItem('rc_sessions'))||[]; }catch{ return []; }
