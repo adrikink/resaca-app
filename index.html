@@ -694,7 +694,7 @@ select.field option{background:#111827;color:#E8ECF4}
 .chat-input-bar{
   display:flex;align-items:center;gap:6px;padding:8px 10px;
   background:#0D0F1F;border-top:1px solid rgba(255,255,255,.07);
-  position:sticky;bottom:0;flex-shrink:0;
+  flex-shrink:0;
 }
 .chat-icon-btn{background:none;border:none;font-size:24px;cursor:pointer;
   padding:4px;line-height:1;flex-shrink:0;opacity:.8}
@@ -3104,7 +3104,28 @@ function gvTab(idx){
   document.querySelectorAll('.gv-tab').forEach((b,i)=>b.classList.toggle('active',i===idx));
   const activeBtn=document.querySelectorAll('.gv-tab')[idx];
   activeBtn?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
-  if(idx===4){setTimeout(renderChatMessages,50);}
+
+  // Chat tab: fix layout so messages don't bleed below input bar
+  const ligaSlide = document.getElementById('t-liga');
+  if(idx === 4){
+    // Lock parent scroll so chat-wrap fills exactly the available space
+    if(ligaSlide) ligaSlide.style.overflowY = 'hidden';
+    setTimeout(() => {
+      const tabsRow = document.getElementById('gv-tabs-row');
+      const chatWrap = document.getElementById('chat-wrap');
+      const nav = document.querySelector('.bottom-nav');
+      if(tabsRow && chatWrap) {
+        const top = tabsRow.getBoundingClientRect().bottom;
+        const navH = nav ? nav.offsetHeight : 56;
+        const safeB = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab')||'0')||0;
+        chatWrap.style.height = (window.innerHeight - top - navH - safeB) + 'px';
+      }
+      renderChatMessages();
+    }, 50);
+  } else {
+    // Restore scroll for other tabs
+    if(ligaSlide) ligaSlide.style.overflowY = '';
+  }
   closeEmojiPicker();
 }
 
