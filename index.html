@@ -115,7 +115,7 @@ select.field option{background:#111827;color:#E8ECF4}
 #main-slides-wrap{
   position:fixed;top:0;left:0;right:0;
   bottom:calc(56px + env(safe-area-inset-bottom));
-  overflow:hidden;z-index:1;
+  overflow:clip;z-index:1;
 }
 #main-slides{
   display:flex;width:400%;height:100%;
@@ -3454,12 +3454,19 @@ function renderProfile() {
   if(profileView==='history'){ renderHistoryView(); return; }
   renderProfileMain();
   // Scroll levels road to current level after render
-  requestAnimationFrame(() => {
+  setTimeout(() => {
     const xp = getXP();
     const curIdx = XP_LEVELS.indexOf(getXPLevel(xp));
     const card = document.getElementById('lv-card-' + curIdx);
-    card?.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
-  });
+    const road = document.getElementById('levels-road');
+    if(card && road) {
+      // card.offsetLeft is relative to offsetParent (#main-slides), so subtract road.offsetLeft
+      const cardPosInRoad = card.offsetLeft - road.offsetLeft;
+      const roadW = road.clientWidth;
+      const cardW = card.offsetWidth;
+      road.scrollLeft = cardPosInRoad - roadW/2 + cardW/2;
+    }
+  }, 100);
 }
 
 function renderProfileMain() {
