@@ -546,6 +546,29 @@ select.field option{background:#111827;color:#E8ECF4}
 .member-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px}
 .member-badge.admin{background:rgba(255,215,0,.15);color:#FFD700;border:1px solid rgba(255,215,0,.3)}
 .member-badge.you{background:rgba(118,153,214,.15);color:#7699D6;border:1px solid rgba(118,153,214,.3)}
+.member-item{cursor:pointer;transition:background .15s}
+.member-item:active{background:rgba(255,255,255,.08)}
+
+/* ── MEMBER PROFILE MODAL ── */
+#member-profile-overlay{position:fixed;inset:0;z-index:200;display:none;align-items:flex-end;justify-content:center}
+#member-profile-overlay.active{display:flex}
+.mp-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.mp-card{position:relative;background:#151829;border-radius:24px 24px 0 0;padding:28px 24px calc(32px + env(safe-area-inset-bottom));width:100%;max-width:450px;z-index:1;text-align:center;animation:slideUpSheet .25s ease}
+@keyframes slideUpSheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mp-close-btn{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.1);border:none;color:rgba(168,185,220,.7);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.mp-av{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;margin:0 auto 14px;box-shadow:0 0 24px rgba(0,0,0,.4)}
+.mp-name{font-size:22px;font-weight:800;color:#E8ECF4;margin-bottom:4px}
+.mp-you-badge{display:inline-block;background:rgba(118,153,214,.2);color:#7699D6;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;margin-bottom:10px}
+.mp-level-row{display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:14px}
+.mp-level-badge{font-size:22px;line-height:1}
+.mp-level-name{font-size:15px;font-weight:700;color:#E8ECF4}
+.mp-xp-bar-wrap{height:7px;background:rgba(255,255,255,.08);border-radius:4px;margin:0 16px 6px;overflow:hidden}
+.mp-xp-bar-fill{height:100%;background:linear-gradient(90deg,#7699D6,#9BC4FF);border-radius:4px}
+.mp-xp-text{font-size:12px;color:rgba(168,185,220,.4);margin-bottom:22px}
+.mp-stats-row{display:flex;justify-content:center;gap:10px}
+.mp-stat{background:rgba(255,255,255,.05);border-radius:14px;padding:14px 18px;min-width:72px}
+.mp-stat-val{font-size:22px;font-weight:800;color:#E8ECF4}
+.mp-stat-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(168,185,220,.4);margin-top:3px}
 
 .reto-card{
   background:linear-gradient(135deg,rgba(255,77,109,.12),rgba(255,166,48,.08));
@@ -668,7 +691,7 @@ select.field option{background:#111827;color:#E8ECF4}
 
 /* ── CHAT ── */
 .chat-wrap{display:flex;flex-direction:column;height:calc(100dvh - 340px);min-height:300px;position:relative}
-.chat-msgs{flex:1;overflow-y:auto;padding:4px 0 8px;display:flex;flex-direction:column;gap:2px;
+.chat-msgs{flex:1;overflow-y:auto;padding:4px 0 28px;display:flex;flex-direction:column;gap:2px;
   -webkit-overflow-scrolling:touch}
 .chat-day-sep{text-align:center;font-size:11px;color:rgba(168,185,220,.35);
   padding:10px 0;font-weight:600;letter-spacing:.3px}
@@ -1657,6 +1680,12 @@ select.field option{background:#111827;color:#E8ECF4}
 </div>
 
 <!-- ═══════════ MODAL GRUPO ═══════════ -->
+<!-- Member profile sheet -->
+<div id="member-profile-overlay">
+  <div class="mp-backdrop" onclick="closeMemberProfile()"></div>
+  <div class="mp-card" id="mp-card-inner"></div>
+</div>
+
 <div class="overlay hidden" id="group-overlay">
   <div class="modal">
     <div class="modal-head">
@@ -2740,15 +2769,19 @@ function renderGroupView(group) {
 
           <!-- SLIDE 2: GRUPO/MIEMBROS -->
           <div class="gv-slide members-grid" id="gv-slide-2">
-            ${allMembers.map(m=>`
-            <div class="member-item">
+            ${allMembers.map((m,mi)=>{
+              // Store member profile data for the modal
+              window._memberProfiles = window._memberProfiles || {};
+              window._memberProfiles[m.name] = {...m, isMe: m.name===myName};
+              return `
+            <div class="member-item" onclick="showMemberProfile('${m.name.replace(/'/g,"\\'")}')">
               <div class="member-av" style="background:${m.color}">${m.initial}</div>
               <div class="member-info">
                 <div class="member-name">${m.name}</div>
                 <div class="member-sub">${m.nights} noche${m.nights!==1?'s':''} · Récord: ${m.best}%</div>
               </div>
               ${m.isAdmin?'<span class="member-badge admin">👑 Admin</span>':m.name===myName?'<span class="member-badge you">Tú</span>':''}
-            </div>`).join('')}
+            </div>`;}).join('')}
             <div class="invite-card">
               <div class="invite-card-title">Invita a tus amigos</div>
               <div class="invite-card-sub">Comparte este código</div>
@@ -2895,15 +2928,46 @@ function renderGroupView(group) {
 /* ─── GROUP V2 HELPERS ─── */
 const AVATAR_COLORS=['#FF6B6B','#FFD93D','#6BCB77','#4D96FF','#FF922B','#F06595','#74C0FC','#A9E34B','#FF8787','#63E6BE'];
 
+function showMemberProfile(name) {
+  const data = (window._memberProfiles || {})[name];
+  if(!data) return;
+  const xp = data.isMe ? getXP() : (data.xp || 0);
+  const level = getXPLevel(xp);
+  const nextLevel = XP_LEVELS.find(l => l.min > xp);
+  const pct = nextLevel ? Math.min(100, Math.round((xp - level.min) / (nextLevel.min - level.min) * 100)) : 100;
+  const xpText = nextLevel ? `${xp.toLocaleString()} / ${nextLevel.min.toLocaleString()} XP → ${nextLevel.badge} ${nextLevel.name}` : `${xp.toLocaleString()} XP · 👑 Nivel máximo`;
+  const avgStat = data.avg !== undefined ? `<div class="mp-stat"><div class="mp-stat-val">${data.avg}%</div><div class="mp-stat-lbl">Promedio</div></div>` : '';
+  document.getElementById('mp-card-inner').innerHTML = `
+    <button class="mp-close-btn" onclick="closeMemberProfile()">✕</button>
+    <div class="mp-av" style="background:${data.color}">${data.initial}</div>
+    <div class="mp-name">${data.name}</div>
+    ${data.isMe ? '<div class="mp-you-badge">Tú</div>' : ''}
+    <div class="mp-level-row">
+      <span class="mp-level-badge">${level.badge}</span>
+      <span class="mp-level-name">${level.name}</span>
+    </div>
+    <div class="mp-xp-bar-wrap"><div class="mp-xp-bar-fill" style="width:${pct}%"></div></div>
+    <div class="mp-xp-text">${xpText}</div>
+    <div class="mp-stats-row">
+      <div class="mp-stat"><div class="mp-stat-val">${data.nights}</div><div class="mp-stat-lbl">Noches</div></div>
+      <div class="mp-stat"><div class="mp-stat-val">${data.best}%</div><div class="mp-stat-lbl">Récord</div></div>
+      ${avgStat}
+    </div>`;
+  document.getElementById('member-profile-overlay').classList.add('active');
+}
+function closeMemberProfile() {
+  document.getElementById('member-profile-overlay')?.classList.remove('active');
+}
+
 function getGroupMembers(group, myName, mySessions){
   const myBest=mySessions.length?Math.max(...mySessions.map(s=>s.score)):0;
   const me={name:myName,initial:myName[0]?.toUpperCase()||'?',color:AVATAR_COLORS[0],nights:mySessions.length,best:myBest,isAdmin:true};
   if(DEV_MODE){
     return [me,
-      {name:'Pablo', initial:'P',color:AVATAR_COLORS[1],nights:7,best:89,isAdmin:false},
-      {name:'Laura', initial:'L',color:AVATAR_COLORS[2],nights:5,best:92,isAdmin:false},
-      {name:'Marcos',initial:'M',color:AVATAR_COLORS[3],nights:3,best:45,isAdmin:false},
-      {name:'Sofía', initial:'S',color:AVATAR_COLORS[4],nights:9,best:78,isAdmin:false},
+      {name:'Pablo', initial:'P',color:AVATAR_COLORS[1],nights:7,best:89,avg:76,xp:1450,isAdmin:false},
+      {name:'Laura', initial:'L',color:AVATAR_COLORS[2],nights:5,best:92,avg:73,xp:920, isAdmin:false},
+      {name:'Marcos',initial:'M',color:AVATAR_COLORS[3],nights:3,best:45,avg:50,xp:285, isAdmin:false},
+      {name:'Sofía', initial:'S',color:AVATAR_COLORS[4],nights:9,best:78,avg:76,xp:2100,isAdmin:false},
     ];
   }
   return [me];
@@ -3118,7 +3182,7 @@ function gvTab(idx){
         const top = tabsRow.getBoundingClientRect().bottom;
         const navH = nav ? nav.offsetHeight : 56;
         const safeB = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab')||'0')||0;
-        chatWrap.style.height = (window.innerHeight - top - navH - safeB) + 'px';
+        chatWrap.style.height = (window.innerHeight - top - navH - safeB - 8) + 'px';
       }
       renderChatMessages();
     }, 50);
@@ -3335,7 +3399,7 @@ function renderChatMessages(){
         </div>
       </div>`;
   }).join('');
-  container.scrollTop=container.scrollHeight;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ container.scrollTop=container.scrollHeight; }));
 }
 
 function escapeHtml(t){
