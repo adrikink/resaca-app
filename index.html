@@ -2725,9 +2725,9 @@ function renderGroupView(group) {
       <div class="gv-tabs-row" id="gv-tabs-row">
         <button class="gv-tab active" onclick="gvTab(0)">🏆 Ranking</button>
         <button class="gv-tab"        onclick="gvTab(1)">⚡ Feed</button>
-        <button class="gv-tab"        onclick="gvTab(2)">👥 Grupo</button>
+        <button class="gv-tab"        onclick="gvTab(2)">💬 Chat</button>
         <button class="gv-tab"        onclick="gvTab(3)">📊 Stats</button>
-        <button class="gv-tab"        onclick="gvTab(4)">💬 Chat</button>
+        <button class="gv-tab"        onclick="gvTab(4)">👥 Grupo</button>
       </div>
 
       <div class="gv-slides-wrap" id="gv-slides-wrap">
@@ -2767,28 +2767,21 @@ function renderGroupView(group) {
               </div>`).join('')}
           </div>
 
-          <!-- SLIDE 2: GRUPO/MIEMBROS -->
-          <div class="gv-slide members-grid" id="gv-slide-2">
-            ${allMembers.map((m,mi)=>{
-              // Store member profile data for the modal
-              window._memberProfiles = window._memberProfiles || {};
-              window._memberProfiles[m.name] = {...m, isMe: m.name===myName};
-              return `
-            <div class="member-item" onclick="showMemberProfile('${m.name.replace(/'/g,"\\'")}')">
-              <div class="member-av" style="background:${m.color}">${m.initial}</div>
-              <div class="member-info">
-                <div class="member-name">${m.name}</div>
-                <div class="member-sub">${m.nights} noche${m.nights!==1?'s':''} · Récord: ${m.best}%</div>
-              </div>
-              ${m.isAdmin?'<span class="member-badge admin">👑 Admin</span>':m.name===myName?'<span class="member-badge you">Tú</span>':''}
-            </div>`;}).join('')}
-            <div class="invite-card">
-              <div class="invite-card-title">Invita a tus amigos</div>
-              <div class="invite-card-sub">Comparte este código</div>
-              <div class="invite-code-big">${group.code}</div>
-              <div class="invite-actions">
-                <button class="invite-btn copy" onclick="copyGroupCode('${group.code}')">📋 Copiar</button>
-                <button class="invite-btn share" onclick="shareGroup('${group.name}','${group.code}')">📲 Compartir</button>
+          <!-- SLIDE 2: CHAT -->
+          <div class="gv-slide" id="gv-slide-2">
+            <div class="chat-wrap" id="chat-wrap">
+              <div class="chat-msgs" id="chat-msgs"></div>
+              <div class="chat-input-bar">
+                <button class="chat-icon-btn" onclick="toggleEmojiPicker()" title="Emojis">😊</button>
+                <div class="chat-text-field" id="chat-input" contenteditable="true"
+                  data-placeholder="Mensaje..."
+                  onkeydown="chatKeyDown(event)"
+                  oninput="chatInputChange(this)"
+                  style="position:relative"></div>
+                <label class="chat-icon-btn" title="Foto" style="cursor:pointer">
+                  📷<input type="file" accept="image/*" id="chat-photo-input" style="display:none" onchange="sendChatPhoto(this)">
+                </label>
+                <button class="chat-send-btn" id="chat-send-btn" onclick="sendChatMsg()">➤</button>
               </div>
             </div>
           </div>
@@ -2809,21 +2802,27 @@ function renderGroupView(group) {
             <button class="btn-liga secondary" style="margin-top:14px;width:100%" id="btn-leave-group">Salir del grupo</button>
           </div>
 
-          <!-- SLIDE 4: CHAT -->
-          <div class="gv-slide" id="gv-slide-4">
-            <div class="chat-wrap" id="chat-wrap">
-              <div class="chat-msgs" id="chat-msgs"></div>
-              <div class="chat-input-bar">
-                <button class="chat-icon-btn" onclick="toggleEmojiPicker()" title="Emojis">😊</button>
-                <div class="chat-text-field" id="chat-input" contenteditable="true"
-                  data-placeholder="Mensaje..."
-                  onkeydown="chatKeyDown(event)"
-                  oninput="chatInputChange(this)"
-                  style="position:relative"></div>
-                <label class="chat-icon-btn" title="Foto" style="cursor:pointer">
-                  📷<input type="file" accept="image/*" id="chat-photo-input" style="display:none" onchange="sendChatPhoto(this)">
-                </label>
-                <button class="chat-send-btn" id="chat-send-btn" onclick="sendChatMsg()">➤</button>
+          <!-- SLIDE 4: GRUPO/MIEMBROS -->
+          <div class="gv-slide members-grid" id="gv-slide-4">
+            ${allMembers.map((m,mi)=>{
+              window._memberProfiles = window._memberProfiles || {};
+              window._memberProfiles[m.name] = {...m, isMe: m.name===myName};
+              return `
+            <div class="member-item" onclick="showMemberProfile('${m.name.replace(/'/g,"\\'")}')">
+              <div class="member-av" style="background:${m.color}">${m.initial}</div>
+              <div class="member-info">
+                <div class="member-name">${m.name}</div>
+                <div class="member-sub">${m.nights} noche${m.nights!==1?'s':''} · Récord: ${m.best}%</div>
+              </div>
+              ${m.isAdmin?'<span class="member-badge admin">👑 Admin</span>':m.name===myName?'<span class="member-badge you">Tú</span>':''}
+            </div>`;}).join('')}
+            <div class="invite-card">
+              <div class="invite-card-title">Invita a tus amigos</div>
+              <div class="invite-card-sub">Comparte este código</div>
+              <div class="invite-code-big">${group.code}</div>
+              <div class="invite-actions">
+                <button class="invite-btn copy" onclick="copyGroupCode('${group.code}')">📋 Copiar</button>
+                <button class="invite-btn share" onclick="shareGroup('${group.name}','${group.code}')">📲 Compartir</button>
               </div>
             </div>
           </div>
@@ -3167,7 +3166,7 @@ function startGroupChallenge() {
       ts: new Date().toISOString(),
     });
     // Ir al chat tras un momento para ver la notificación
-    setTimeout(() => gvTab(4), 700);
+    setTimeout(() => gvTab(2), 700);
   }
 
   // XP con anti-spam
@@ -3182,10 +3181,9 @@ function gvTab(idx){
   const activeBtn=document.querySelectorAll('.gv-tab')[idx];
   activeBtn?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
 
-  // Chat tab: fix layout so messages don't bleed below input bar
+  // Chat is now index 2 — fix layout so messages don't bleed below input bar
   const ligaSlide = document.getElementById('t-liga');
-  if(idx === 4){
-    // Lock parent scroll so chat-wrap fills exactly the available space
+  if(idx === 2){
     if(ligaSlide) ligaSlide.style.overflowY = 'hidden';
     setTimeout(() => {
       const tabsRow = document.getElementById('gv-tabs-row');
@@ -3200,7 +3198,6 @@ function gvTab(idx){
       renderChatMessages();
     }, 50);
   } else {
-    // Restore scroll for other tabs
     if(ligaSlide) ligaSlide.style.overflowY = '';
   }
   closeEmojiPicker();
