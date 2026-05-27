@@ -587,12 +587,10 @@ select.field option{background:#111827;color:#E8ECF4}
 }
 .gv-tab.active{background:rgba(118,153,214,.25);color:#7699D6}
 
-.gv-slides-wrap{overflow:hidden;border-radius:0}
-.gv-slides{
-  display:flex;transition:transform .32s cubic-bezier(.4,0,.2,1);
-  will-change:transform;
-}
-.gv-slide{flex-shrink:0;width:100%}
+.gv-slides-wrap{}
+.gv-slides{}
+.gv-slide{display:none}
+.gv-slide.active{display:block}
 
 /* ── CHAT ── */
 .chat-wrap{display:flex;flex-direction:column;height:calc(100dvh - 340px);min-height:300px;position:relative}
@@ -1177,7 +1175,7 @@ select.field option{background:#111827;color:#E8ECF4}
       <button class="btn-primary" id="btn-login">Entrar</button>
       <div class="auth-divider"><span>o</span></div>
       <button class="btn-social" id="btn-apple-login">
-        <svg width="17" height="20" viewBox="0 0 814 1000" fill="currentColor"><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 454.5 0 336.5 0 221.7 0 97.2 80.9 32.9 160.7 32.9c59.4 0 102.3 39.1 137.5 39.1 33.9 0 87.3-41.4 154.3-41.4 24.9 0 108.2 2.6 168.6 81.2zm-111.1-66.9c-14.4-17.3-40.7-30.9-72-30.9-43.8 0-85.7 28.6-113.3 28.6-29.9 0-74.6-26.7-120.6-26.7-82.5 0-168.7 68.8-168.7 200.3 0 76.2 29.3 156.5 65.3 208.5 30.8 43.5 57.5 78.5 96.4 78.5 40.8 0 59.4-26.7 112.4-26.7 51.7 0 66 26.7 111.4 26.7 42.1 0 70.5-37.4 97.3-76.2 27.9-41.5 39.5-81.8 40.1-83.7-2.6-.6-76.5-29.9-76.5-122.9 0-79.2 61.6-115 65.3-117.8z"/></svg>
+        <svg width="16" height="20" viewBox="0 0 16 20" fill="currentColor" style="flex-shrink:0"><path d="M13.338 10.548c-.02-2.643 2.166-3.94 2.265-4.003-1.243-1.813-3.168-2.062-3.841-2.082-1.614-.165-3.17.962-3.988.962-.836 0-2.1-.944-3.46-.918-1.753.026-3.393 1.032-4.293 2.597-1.854 3.192-.472 7.896 1.306 10.481.882 1.262 1.916 2.669 3.273 2.618 1.322-.052 1.82-.844 3.418-.844 1.582 0 2.044.844 3.423.816 1.42-.024 2.315-1.27 3.17-2.542 1.016-1.456 1.427-2.885 1.444-2.959-.033-.012-2.74-1.043-2.717-4.126zm-2.532-7.59c.715-.876 1.2-2.073 1.066-3.289-.913.038-2.056.624-2.718 1.48-.585.682-1.11 1.797-.975 2.846.93.07 1.9-.474 2.627-1.037z"/></svg>
         Continuar con Apple
       </button>
       <div class="auth-divider"><span>o</span></div>
@@ -1200,7 +1198,7 @@ select.field option{background:#111827;color:#E8ECF4}
       <button class="btn-primary" id="btn-register">Crear cuenta</button>
       <div class="auth-divider"><span>o</span></div>
       <button class="btn-social" id="btn-apple-register">
-        <svg width="17" height="20" viewBox="0 0 814 1000" fill="currentColor"><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 454.5 0 336.5 0 221.7 0 97.2 80.9 32.9 160.7 32.9c59.4 0 102.3 39.1 137.5 39.1 33.9 0 87.3-41.4 154.3-41.4 24.9 0 108.2 2.6 168.6 81.2zm-111.1-66.9c-14.4-17.3-40.7-30.9-72-30.9-43.8 0-85.7 28.6-113.3 28.6-29.9 0-74.6-26.7-120.6-26.7-82.5 0-168.7 68.8-168.7 200.3 0 76.2 29.3 156.5 65.3 208.5 30.8 43.5 57.5 78.5 96.4 78.5 40.8 0 59.4-26.7 112.4-26.7 51.7 0 66 26.7 111.4 26.7 42.1 0 70.5-37.4 97.3-76.2 27.9-41.5 39.5-81.8 40.1-83.7-2.6-.6-76.5-29.9-76.5-122.9 0-79.2 61.6-115 65.3-117.8z"/></svg>
+        <svg width="16" height="20" viewBox="0 0 16 20" fill="currentColor" style="flex-shrink:0"><path d="M13.338 10.548c-.02-2.643 2.166-3.94 2.265-4.003-1.243-1.813-3.168-2.062-3.841-2.082-1.614-.165-3.17.962-3.988.962-.836 0-2.1-.944-3.46-.918-1.753.026-3.393 1.032-4.293 2.597-1.854 3.192-.472 7.896 1.306 10.481.882 1.262 1.916 2.669 3.273 2.618 1.322-.052 1.82-.844 3.418-.844 1.582 0 2.044.844 3.423.816 1.42-.024 2.315-1.27 3.17-2.542 1.016-1.456 1.427-2.885 1.444-2.959-.033-.012-2.74-1.043-2.717-4.126zm-2.532-7.59c.715-.876 1.2-2.073 1.066-3.289-.913.038-2.056.624-2.718 1.48-.585.682-1.11 1.797-.975 2.846.93.07 1.9-.474 2.627-1.037z"/></svg>
         Registrarse con Apple
       </button>
       <div class="auth-divider"><span>o</span></div>
@@ -2748,9 +2746,8 @@ function renderGroupView(group) {
   // Seed DEV_MODE chat messages
   if(DEV_MODE) seedDevChatMessages(group.id);
 
-  // Init swipe + chat
+  // Init chat + first tab
   requestAnimationFrame(()=>{
-    initGroupSwipe();
     gvTab(0);
   });
 
@@ -2864,10 +2861,9 @@ function getGroupChallenge(){const d=new Date();const seed=d.getDate()+d.getMont
 function startGroupChallenge(){showTab('t-calcular');setTimeout(()=>window.scrollTo({top:0,behavior:'smooth'}),100);}
 
 function gvTab(idx){
-  const n=5;
   window._gvActiveTab=idx;
-  const slides=document.getElementById('gv-slides');
-  if(slides) slides.style.transform=`translateX(-${idx*100}%)`;
+  // Show/hide slides — no translateX, no layout shift
+  document.querySelectorAll('.gv-slide').forEach((s,i)=>s.classList.toggle('active',i===idx));
   document.querySelectorAll('.gv-tab').forEach((b,i)=>b.classList.toggle('active',i===idx));
   const activeBtn=document.querySelectorAll('.gv-tab')[idx];
   activeBtn?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
@@ -4871,12 +4867,6 @@ function renderGamesLibrary() {
     renderGamesLibrary();
   });
 
-  // Init swipe once per element instance
-  const libEl = document.getElementById('games-library');
-  if(libEl && !libEl._swipeReady) {
-    libEl._swipeReady = true;
-    initGamesSwipe();
-  }
 }
 
 /* ── GAMES SWIPE ── */
