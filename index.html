@@ -621,6 +621,45 @@ select.field option{background:#111827;color:#E8ECF4}
   border-color:#24A2DA;color:#E8ECF4;font-size:14px;
 }
 
+/* ── LEVELS ROAD ── */
+.levels-road-wrap{margin-bottom:16px}
+.levels-road-title{font-size:11px;font-weight:700;letter-spacing:.8px;color:rgba(168,185,220,.4);
+  text-transform:uppercase;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.levels-road-title span{color:rgba(168,185,220,.35);font-size:13px}
+.levels-road{
+  display:flex;gap:8px;overflow-x:auto;padding:4px 2px 12px;
+  -webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;
+}
+.levels-road::-webkit-scrollbar{display:none}
+.lv-card{
+  flex-shrink:0;width:90px;border-radius:14px;padding:12px 8px 10px;
+  text-align:center;border:1.5px solid;scroll-snap-align:center;
+  cursor:default;position:relative;
+}
+.lv-card.past{
+  border-color:rgba(255,255,255,.08);background:rgba(255,255,255,.04);opacity:.6;
+}
+.lv-card.current{
+  border-color:rgba(118,153,214,.5);background:rgba(118,153,214,.1);
+  box-shadow:0 0 16px rgba(118,153,214,.2);
+}
+.lv-card.future{
+  border-color:rgba(255,255,255,.06);background:rgba(255,255,255,.02);
+}
+.lv-card .lv-card-emoji{font-size:26px;line-height:1;margin-bottom:4px}
+.lv-card .lv-card-name{font-size:11px;font-weight:700;color:#E8ECF4;margin-bottom:2px;line-height:1.2}
+.lv-card .lv-card-xp{font-size:10px;color:rgba(168,185,220,.4)}
+.lv-card .lv-card-check{
+  position:absolute;top:5px;right:6px;font-size:10px;color:#7699D6;font-weight:900;
+}
+.lv-card.current .lv-card-bar{
+  height:3px;background:rgba(255,255,255,.1);border-radius:3px;margin-top:6px;overflow:hidden;
+}
+.lv-card.current .lv-card-bar-fill{height:100%;border-radius:3px;
+  background:linear-gradient(90deg,#7699D6,#24A2DA);transition:width .5s}
+.lv-card.future .lv-card-emoji{filter:grayscale(1);opacity:.4}
+.lv-card.future .lv-card-name{color:rgba(168,185,220,.35)}
+
 /* Reto accepted state */
 .reto-btn.accepted{
   background:rgba(100,200,120,.25);border:1px solid rgba(100,200,120,.4);
@@ -1791,18 +1830,18 @@ const KNOWN_DRINKS = [
 
 
 const BADGES_DEF = [
-  {id:'nocturno',     icon:'🦇'},
-  {id:'sobreviviente',icon:'🛡️'},
-  {id:'erasmus',      icon:'🎓'},
-  {id:'blackout',     icon:'🌑'},
-  {id:'titanio',      icon:'🤖'},
-  {id:'chupito-rey',  icon:'🥃'},
-  {id:'leyenda',      icon:'💀'},
-  {id:'el-69',        icon:'🧙'},
-  {id:'abuelo',       icon:'👴'},
-  {id:'cientifico',   icon:'🔬'},
-  {id:'sin-fin',      icon:'⏰'},
-  {id:'comprometido', icon:'🤡'},
+  {id:'nocturno',     icon:'🦇', xp:100},  // 15 sesiones — constancia media
+  {id:'sobreviviente',icon:'🛡️', xp:75},   // alcanzar 90% — fácil
+  {id:'erasmus',      icon:'🎓', xp:150},  // condición social — media-difícil
+  {id:'blackout',     icon:'🌑', xp:200},  // 100% — difícil
+  {id:'titanio',      icon:'🤖', xp:350},  // 20 sesiones todas <30% — muy difícil
+  {id:'chupito-rey',  icon:'🥃', xp:200},  // 50 chupitos — difícil
+  {id:'leyenda',      icon:'💀', xp:500},  // 3 veces 100% — élite
+  {id:'el-69',        icon:'🧙', xp:150},  // exacto 69% — suerte + habilidad
+  {id:'abuelo',       icon:'👴', xp:50},   // <10% — fácil
+  {id:'cientifico',   icon:'🔬', xp:175},  // condición específica — media
+  {id:'sin-fin',      icon:'⏰', xp:250},  // 12h duración — muy difícil
+  {id:'comprometido', icon:'🤡', xp:125},  // 3 sesiones mismo día — media
 ];
 
 /* ═══════════════════════════════════════
@@ -2020,6 +2059,8 @@ function initMainSlide() {
   let startX=0, startY=0, dx=0, tracking=false, dir=null;
 
   wrap.addEventListener('touchstart', e => {
+    // Ignore taps on interactive elements — buttons, inputs, links, scrollable inner containers
+    if(e.target.closest('button,a,input,textarea,[contenteditable],.gv-tabs-row,.chat-input-bar,.ep-overlay,.drink-overlay,.group-overlay')) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     tracking = true; dir = null; dx = 0;
@@ -2895,24 +2936,48 @@ function getGroupAllSessions(group, myName, mySessions){
    XP / LEVEL SYSTEM
 ═══════════════════════════════════════ */
 const XP_LEVELS = [
-  { min:0,    name:'Novato',   badge:'🌱', color:'#7a9e7e' },
-  { min:100,  name:'Amateur',  badge:'🍺', color:'#e8a838' },
-  { min:300,  name:'Habitual', badge:'🔥', color:'#e05c3a' },
-  { min:700,  name:'Veterano', badge:'💀', color:'#9b59b6' },
-  { min:1500, name:'Leyenda',  badge:'👑', color:'#f1c40f' },
+  { min:0,      name:'Novato',     badge:'🌱', color:'#7a9e7e', desc:'Recién llegado' },
+  { min:150,    name:'Cachorro',   badge:'🍺', color:'#e8c84a', desc:'Ya conoces el sabor' },
+  { min:400,    name:'Aficionado', badge:'🔥', color:'#e07a3a', desc:'Cada fin de semana' },
+  { min:900,    name:'Habitual',   badge:'⚡', color:'#5ba8e0', desc:'Esto ya es un hábito' },
+  { min:1800,   name:'Resistente', badge:'💪', color:'#3ab89e', desc:'Tu hígado aguanta' },
+  { min:3500,   name:'Experto',    badge:'🎯', color:'#b05ce0', desc:'Técnica refinada' },
+  { min:7000,   name:'Veterano',   badge:'💀', color:'#e05c7a', desc:'Años de experiencia' },
+  { min:12000,  name:'Imparable',  badge:'☠️', color:'#c0392b', desc:'No hay quien te pare' },
+  { min:20000,  name:'Élite',      badge:'🏆', color:'#e8a838', desc:'Top del grupo' },
+  { min:35000,  name:'Leyenda',    badge:'👑', color:'#f1c40f', desc:'Una institución' },
 ];
 
 // Anti-gaming rules:
-// session  → +25 XP, máx 1/día, cooldown 6h (no importa cuántas sesiones hagas)
+// session  → +25 XP, máx 1/día, cooldown 6h
 // challenge→ +50 XP, máx 1/día, cooldown 20h
-// chat     → +3 XP,  máx 10/día, sin cooldown
-// group    → +75 XP, solo 1 vez por vida (one-time)
+// chat     → +3 XP,  máx 10/día
+// group    → +75 XP, solo 1 vez por vida
+// badge_*  → XP del logro, solo 1 vez por vida por badge
 const XP_RULES = {
   session:   { xp:25, dailyCap:1, cooldownH:6,      oneTime:false, label:'sesión calculada' },
   challenge: { xp:50, dailyCap:1, cooldownH:20,     oneTime:false, label:'reto aceptado'    },
   chat:      { xp:3,  dailyCap:10, cooldownH:0,     oneTime:false, label:'mensaje enviado'  },
   group:     { xp:75, dailyCap:1, cooldownH:999999, oneTime:true,  label:'grupo creado/unido'},
 };
+
+function earnBadgeXP(badgeId) {
+  const def = BADGES_DEF.find(b => b.id === badgeId);
+  if(!def || !def.xp) return;
+  const key = 'rc_xplog_badge_' + badgeId;
+  let done = false;
+  try { done = !!localStorage.getItem(key); } catch(e) {}
+  if(done) return; // ya dado
+  const prev = getXP();
+  const next = prev + def.xp;
+  try {
+    localStorage.setItem('rc_xp', next);
+    localStorage.setItem(key, '1');
+  } catch(e) {}
+  showXPToast(def.xp, 'logro: ' + badgeId.replace(/-/g,' '));
+  if(getXPLevel(prev).name !== getXPLevel(next).name)
+    setTimeout(() => showLevelUpToast(getXPLevel(next)), 1600);
+}
 
 function getXP() {
   try { return parseInt(localStorage.getItem('rc_xp') || '0') || 0; } catch(e) { return 0; }
@@ -3388,6 +3453,13 @@ function renderProfile() {
   if(profileView==='settings'){ renderSettingsView(); return; }
   if(profileView==='history'){ renderHistoryView(); return; }
   renderProfileMain();
+  // Scroll levels road to current level after render
+  requestAnimationFrame(() => {
+    const xp = getXP();
+    const curIdx = XP_LEVELS.indexOf(getXPLevel(xp));
+    const card = document.getElementById('lv-card-' + curIdx);
+    card?.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+  });
 }
 
 function renderProfileMain() {
@@ -3424,6 +3496,23 @@ function renderProfileMain() {
       const lv = getXPLevel(xp);
       const nx = getXPNext(xp);
       const pct = getXPProgress(xp);
+      const curIdx = XP_LEVELS.indexOf(lv);
+
+      const cards = XP_LEVELS.map((l, i) => {
+        const state = i < curIdx ? 'past' : i === curIdx ? 'current' : 'future';
+        const check = i < curIdx ? '<div class="lv-card-check">✓</div>' : '';
+        const bar   = state === 'current'
+          ? `<div class="lv-card-bar"><div class="lv-card-bar-fill" style="width:${pct}%"></div></div>`
+          : '';
+        const xpLabel = i === 0 ? '0 XP' : `${l.min.toLocaleString()} XP`;
+        return `<div class="lv-card ${state}" id="lv-card-${i}">${check}
+          <div class="lv-card-emoji">${l.badge}</div>
+          <div class="lv-card-name">${l.name}</div>
+          <div class="lv-card-xp">${xpLabel}</div>
+          ${bar}
+        </div>`;
+      }).join('');
+
       return `
     <div class="xp-bar-wrap">
       <div class="xp-bar-top">
@@ -3431,10 +3520,15 @@ function renderProfileMain() {
           <span class="lv-emoji">${lv.badge}</span>
           <span class="xp-level-name">${lv.name}</span>
         </div>
-        <span class="xp-count">${xp} XP</span>
+        <span class="xp-count">${xp.toLocaleString()} XP</span>
       </div>
       <div class="xp-track"><div class="xp-fill" style="width:${pct}%"></div></div>
-      <div class="xp-next">${nx ? `${xp}/${nx.min} XP → ${nx.badge} ${nx.name}` : '👑 Nivel máximo'}</div>
+      <div class="xp-next">${nx ? `${xp.toLocaleString()} / ${nx.min.toLocaleString()} XP → ${nx.badge} ${nx.name}` : '👑 Nivel máximo alcanzado'}</div>
+    </div>
+
+    <div class="levels-road-wrap">
+      <div class="levels-road-title">TODOS LOS NIVELES <span>›</span></div>
+      <div class="levels-road" id="levels-road">${cards}</div>
     </div>`;
     })()}
 
@@ -3480,6 +3574,7 @@ function renderProfileMain() {
             <div class="badge-progress-bar"><div class="badge-progress-fill ${earned?'earned':''}" style="width:${pct}%"></div></div>
             <div class="badge-progress-text">${prog.text||`${prog.cur} / ${prog.total}`}</div>
           </div>
+          <div style="margin-top:6px;font-size:11px;font-weight:700;color:${earned?'#7699D6':'rgba(168,185,220,.35)'}">+${b.xp} XP</div>
         </div>`;
       }).join('')}
     </div>
@@ -3841,6 +3936,9 @@ function computeBadges(sessions) {
   const byDay={};
   sessions.forEach(s=>{const d=new Date(s.created_at).toDateString();byDay[d]=(byDay[d]||0)+1;});
   if(Object.values(byDay).some(v=>v>=3)) earned.push('comprometido');
+
+  // Award XP for any newly-earned badges (one-time, anti-dup inside earnBadgeXP)
+  earned.forEach(earnBadgeXP);
 
   return earned;
 }
