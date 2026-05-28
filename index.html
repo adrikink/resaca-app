@@ -4408,11 +4408,11 @@ async function init() {
       await afterLogin(); return;
     }
 
-    if(!supabase){ loginGuest(); return; }
+    if(!supabase){ showScreen('auth'); return; }
 
     const { data:{ session } } = await supabase.auth.getSession();
     if(session){ currentUser=session.user; await afterLogin(); }
-    else { loginGuest(); }
+    else { showScreen('auth'); }
 
   } catch(err) {
     console.error('Init error:', err);
