@@ -5,12 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <title>Resaca Calculator</title>
 <script src="config.js"></script>
-<script>
-// Load Supabase CDN only when not in DEV_MODE
-if(typeof DEV_MODE !== 'undefined' && !DEV_MODE) {
-  document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"><\/script>');
-}
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
