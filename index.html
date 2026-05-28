@@ -1953,20 +1953,20 @@ async function handleRegister() {
 
 async function handleGoogle() {
   if (typeof DEV_MODE !== 'undefined' && DEV_MODE) { loginDevMode('demo@resaca.app'); return; }
-  if (!supabase) { loginGuest(); return; }
+  if (!supabase) { showMsg('auth-error','Error: Supabase no cargó. Recarga la página.'); return; }
   try {
-    const redirectTo = 'https://jolly-griffin-14a5b0.netlify.app';
+    const redirectTo = window.location.origin + window.location.pathname;
     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
-  } catch(e) { loginGuest(); }
+  } catch(e) { showMsg('auth-error', 'Error Google: ' + e.message); }
 }
 
 async function handleApple() {
   if (typeof DEV_MODE !== 'undefined' && DEV_MODE) { loginDevMode('demo@resaca.app'); return; }
-  if (!supabase) { loginGuest(); return; }
+  if (!supabase) { showMsg('auth-error','Error: Supabase no cargó. Recarga la página.'); return; }
   try {
-    const redirectTo = 'https://jolly-griffin-14a5b0.netlify.app';
+    const redirectTo = window.location.origin + window.location.pathname;
     await supabase.auth.signInWithOAuth({ provider: 'apple', options: { redirectTo } });
-  } catch(e) { loginGuest(); }
+  } catch(e) { showMsg('auth-error', 'Error Apple: ' + e.message); }
 }
 
 function loginDevMode(email) {
@@ -4416,10 +4416,8 @@ async function init() {
 
   } catch(err) {
     console.error('Init error:', err);
-    try { loginGuest(); } catch(e) {
-      // Absolute fallback — just show the app
-      try { showScreen('app'); } catch(e2) {}
-    }
+    // Show login screen on error so user can try to log in
+    try { showScreen('auth'); } catch(e) {}
   }
 }
 
